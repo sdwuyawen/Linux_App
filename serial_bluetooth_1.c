@@ -184,7 +184,7 @@ int main(void)
 		perror("set nonblock");
 	}
 
-	if(set_com_config(fd, 115200, 8, 'N', 1) < 0) /* ÅäÖÃ´®¿Ú */
+	if(set_com_config(fd, 9600, 8, 'N', 1) < 0) /* ÅäÖÃ´®¿Ú */
 	{
 		perror("set_com_config");
 		return 1;

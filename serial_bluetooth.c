@@ -27,6 +27,8 @@ int serial_read(int fd, char *str, unsigned int len, unsigned int timeout)
 	int readlen = 0;						//实际读到的字节数
 	char * ptr;
 
+	struct timeval *p_tv = NULL;
+
 	ptr = str;							//读指针，每次移动，因为实际读出的长度和传入参数可能存在差异
 
 	FD_ZERO(&rfds);						//清除文件描述符集合
@@ -44,7 +46,7 @@ int serial_read(int fd, char *str, unsigned int len, unsigned int timeout)
 	/*开始读*/
 	while(readlen < len)
 	{
-		sret = select(fd+1,&rfds,NULL,NULL,&tv);		//检测串口是否可读
+		sret = select(fd+1,&rfds,NULL,NULL,p_tv);		//检测串口是否可读
 
 		if(sret == -1)										//检测失败
 		{
@@ -71,6 +73,12 @@ int serial_read(int fd, char *str, unsigned int len, unsigned int timeout)
 			printf("timeout!\n");
 			break;
 		}
+
+		{
+			p_tv = &tv;
+			tv.tv_sec  = timeout / 1000;
+			tv.tv_usec = (timeout%1000)*1000;
+		}
 	}
 
 	return readlen;
@@ -83,6 +91,7 @@ int receive_msg(int fd, char *msg, int length_to_read)
 	fd_set rfds;
 
 	int rc = 0;
+	int s_rc = 0;
 	int msg_length = 0;
 
 	FD_ZERO(&rfds);
@@ -93,7 +102,8 @@ int receive_msg(int fd, char *msg, int length_to_read)
 
 	while(length_to_read != 0)
 	{
-		while(rc = select(fd + 1, &rfds, NULL, NULL, p_tv) == -1)
+#if 1
+		while((s_rc = select(fd + 1, &rfds, NULL, NULL, p_tv)) == -1)
 		{
 			if (errno == EINTR) 
 			{
@@ -108,19 +118,34 @@ int receive_msg(int fd, char *msg, int length_to_read)
 				return -1;
 			}
 			
-			printf("select loop rc = %d\n", rc);
+			printf("select loop s_rc = %d\n", s_rc);
 		}
+#endif
 
-		printf("select rc = %d\n", rc);
+#if 0
+		do
+		{
+			s_rc = select(fd + 1, &rfds, NULL, NULL, p_tv);
+		}
+		while(s_rc == -1);
+#endif
+
+#if 0
+		while((s_rc = select(fd + 1, &rfds, NULL, NULL, p_tv)) == -1)
+		while(s_rc = select(fd + 1, &rfds, NULL, NULL, p_tv) == -1)
+		{
+
+		}
+#endif
+		printf("sec: %d,usec: %d\n",tv.tv_sec,tv.tv_usec);
 		
-		/* select超时，说明字节超时，帧完成
-		 * 当p_tv是NULL时，rfds有变化时，返回rc=0，所以这里不能判断rc==0，
-		 * 而要通过read的返回值来判断 */
-		/*if(rc == 0)
+		printf("select s_rc = %d\n", s_rc);
+		
+		/* select超时，帧完成 */
+		if(s_rc == 0)
 		{
 			return msg_length;
 		}
-		*/
 
 		rc = read(fd, msg + msg_length, length_to_read);
 
@@ -147,12 +172,10 @@ int receive_msg(int fd, char *msg, int length_to_read)
 		if(length_to_read > 0)
 		{
 			tv.tv_sec = 0;
-			tv.tv_usec = 500000;
+			tv.tv_usec = 100000;
 			
 			p_tv = &tv;	
 		}	
-
-
 	}
 
 	return msg_length;
@@ -184,7 +207,7 @@ int main(void)
 		perror("set nonblock");
 	}
 
-	if(set_com_config(fd, 115200, 8, 'N', 1) < 0) /* 配置串口 */
+	if(set_com_config(fd, 9600, 8, 'N', 1) < 0) /* 配置串口 */
 	{
 		perror("set_com_config");
 		return 1;
@@ -200,7 +223,6 @@ int main(void)
 //		perror("fgets");
 //	}
 
-//	printf("1\n");
 //	strcat(buff, "\r\n");
 
 	//清空串口输入输出缓冲区
@@ -210,13 +232,11 @@ int main(void)
 //	write(fd, buff, strlen(buff));
 //	printf("write: %s\n", buff);
 
-//	rc = receive_msg(fd, buff, sizeof(buff));
+	rc = receive_msg(fd, buff, sizeof(buff));
 
-//	printf("2\n");
+//	while(read(fd, buff, 1) == -1);
 
-	while(read(fd, buff, 1) == -1);
-
-	serial_read(fd, buff, sizeof(buff), 100);
+//	serial_read(fd, buff, sizeof(buff), 100);
 
 	if(rc == -1)
 	{
