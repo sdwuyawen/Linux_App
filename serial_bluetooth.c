@@ -35,7 +35,20 @@ int main(void)
 		return 1;
 	}	
 
-	sprintf(buff, "AT\r\n");
+//	sprintf(buff, "AT\r\n");
+//	scanf(buff, "%s");				/* 为什么没有阻塞？ */
+
+	if(fgets(buff, BUFFER_SIZE, stdin) == NULL)
+	{
+		perror("fgets");
+	}
+
+	strcat(buff, "\r\n");
+
+	//清空串口输入输出缓冲区
+	tcflush(fd, TCIFLUSH);
+	tcflush(fd, TCOFLUSH);
+
 	write(fd, buff, strlen(buff));
 	printf("write: %s\n", buff);
 
