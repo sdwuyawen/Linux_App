@@ -24,6 +24,11 @@ int main(void)
 		return 1;
 	}
 
+	if(fcntl(fd, F_SETFL, FNDELAY) < 0)
+	{
+		perror("set nonblock");
+	}
+
 	if(set_com_config(fd, 38400, 8, 'N', 1) < 0) /* ÅäÖÃ´®¿Ú */
 	{
 		perror("set_com_config");
@@ -36,7 +41,7 @@ int main(void)
 
 	sleep(1);
 
-	rc = read(fd, buff, 2);
+	rc = read(fd, buff, 10);
 
 	printf("rc = %d, buff = %s\n", rc, buff);
 
