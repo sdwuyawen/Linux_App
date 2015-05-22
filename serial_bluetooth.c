@@ -18,6 +18,9 @@ int main(void)
 	char buff[BUFFER_SIZE];
 	int rc = 0;
 
+	struct timeval tv = {1, 0};
+	fd_set rfds;
+
 	if((fd = open_port(1)) < 0) /* 打开串口 */
 	{
 		perror("open_port");
@@ -38,6 +41,7 @@ int main(void)
 //	sprintf(buff, "AT\r\n");
 //	scanf(buff, "%s");				/* 为什么没有阻塞？ */
 
+
 	if(fgets(buff, BUFFER_SIZE, stdin) == NULL)
 	{
 		perror("fgets");
@@ -52,11 +56,18 @@ int main(void)
 	write(fd, buff, strlen(buff));
 	printf("write: %s\n", buff);
 
-	sleep(1);
+//	sleep(1);
+	
+	FD_ZERO(&rfds);
+	FD_SET(fd, &rfds);
+	
+	select(fd + 1, &rfds, NULL, NULL, &tv);
 
-	rc = read(fd, buff, 10);
-
-	printf("rc = %d, buff = %s\n", rc, buff);
+	if(FD_ISSET(fd, &rfds))
+	{
+		rc = read(fd, buff, sizeof(buff));
+		printf("rc = %d, buff = %s\n", rc, buff);
+	}
 
 #if 0
 	do
