@@ -172,7 +172,7 @@ int receive_msg(int fd, char *msg, int length_to_read)
 		if(length_to_read > 0)
 		{
 			tv.tv_sec = 0;
-			tv.tv_usec = 100000;
+			tv.tv_usec = 10000;
 			
 			p_tv = &tv;	
 		}	
@@ -207,7 +207,7 @@ int main(void)
 		perror("set nonblock");
 	}
 
-	if(set_com_config(fd, 9600, 8, 'N', 1) < 0) /* ÅäÖÃ´®¿Ú */
+	if(set_com_config(fd, 115200, 8, 'N', 1) < 0) /* ÅäÖÃ´®¿Ú */
 	{
 		perror("set_com_config");
 		return 1;
