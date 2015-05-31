@@ -149,6 +149,7 @@ int set_com_config(int fd,int baud_rate, int data_bits, char parity, int stop_bi
 int open_port(int com_port)
 {
 	int fd;
+
 	char *dev[] = {"/dev/s3c2410_serial0", "/dev/s3c2410_serial1", "/dev/s3c2410_serial2"};
 //	char *dev[] = {"/dev/ttySAC0", "/dev/ttySAC1", "/dev/ttySAC2"};
 
