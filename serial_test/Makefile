@@ -1,4 +1,4 @@
-serial_bluetooth: serial_bluetooth.o serial_api.o
+serial_rs485: serial_rs485.o serial_api.o
 	arm-linux-gcc -o $@ $^
 
 %.o : %.S
