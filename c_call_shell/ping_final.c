@@ -116,10 +116,11 @@ int main(int argc,char **argv)
 	struct tm *tm;
 	char *path="./pingout.log";
 	FILE *fp;
-	unsigned int count = 0;
+//	unsigned int count = 0;
 	int online_counts = 0;
 	int offline_counts = 0;
 	ConnectStatus last_status = OFFLINE;
+	char *wday[]={"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
 
 	if(argc != 2)
 	{
@@ -169,7 +170,7 @@ int main(int argc,char **argv)
 		/* 获取当前时间 */
 		time(&timep);
 		tm = localtime(&timep); /* 取得当地时间*/ 
-		sprintf(timebuf, "%d%d%d %d:%d:%d", (1900 + tm->tm_year),(1 + tm->tm_mon), tm->tm_mday,
+		sprintf(timebuf, "%04d%02d%02d %s %02d:%02d:%02d", (1900 + tm->tm_year),(1 + tm->tm_mon), tm->tm_mday, wday[tm->tm_wday],
 				tm->tm_hour, tm->tm_min, tm->tm_sec);
 		/* 上线记录 */
 		if(online_counts == ONLINE_TIME_THRESHOLD)
