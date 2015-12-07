@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #define ONLINE_TIME_THRESHOLD	3	
 
@@ -110,7 +111,10 @@ int main(int argc,char **argv)
 	int i;
 	char cmdbuf[100];
 	char outbuf[1024];
-	char *path="./pingout.txt";
+	char timebuf[128];
+	time_t timep;
+	struct tm *tm;
+	char *path="./pingout.log";
 	FILE *fp;
 	unsigned int count = 0;
 	int online_counts = 0;
@@ -138,21 +142,16 @@ int main(int argc,char **argv)
 		ret = mysystem(cmdbuf, outbuf, sizeof(outbuf));
 		//	printf("output:%s\n", outbuf);
 
-		printf("ret = %d\n",ret);
+//		printf("ret = %d\n",ret);
 
-		/* 把父进程得到的outbuf写入文件，证明父进程读取到管道的数据 */
-		//	fp = fopen(path, "w");
-		//	fputs(outbuf, fp);
-		//	fclose(fp);
-
-		printf("[%d] ", ++count);
+//		printf("[%d] ", ++count);
 		/* host is online */
 		if(ret == 0)
 		{
 			if(online_counts < 10)
 				online_counts++;
 			offline_counts = 0;
-			printf("host %s is online.\n", argv[1]);
+//			printf("host %s is online.\n", argv[1]);
 			sleep(1);
 		}
 		else
@@ -160,16 +159,27 @@ int main(int argc,char **argv)
 			if(offline_counts < 10)
 				offline_counts++;
 			online_counts = 0;
-			printf("host %s can't be found.\n", argv[1]);
+//			printf("host %s can't be found.\n", argv[1]);
 		}
 
+		/* 把父进程得到的outbuf写入文件，证明父进程读取到管道的数据 */
+		fp = fopen(path, "a");		/* 追加写入 */
+		fseek(fp, 0, SEEK_END);
+		
+		/* 获取当前时间 */
+		time(&timep);
+		tm = localtime(&timep); /* 取得当地时间*/ 
+		sprintf(timebuf, "%d%d%d %d:%d:%d", (1900 + tm->tm_year),(1 + tm->tm_mon), tm->tm_mday,
+				tm->tm_hour, tm->tm_min, tm->tm_sec);
 		/* 上线记录 */
 		if(online_counts == ONLINE_TIME_THRESHOLD)
 		{
 			if(last_status == OFFLINE)
 			{
 				last_status = ONLINE;
-				printf("host %s online just now\n", argv[1]);
+				sprintf(outbuf, "%s host %s online just now\n", timebuf, argv[1]);
+				fprintf(stdout, outbuf);
+				fprintf(fp, outbuf);
 			}
 		}
 		/* 下线记录 */
@@ -178,9 +188,12 @@ int main(int argc,char **argv)
 			if(last_status == ONLINE)
 			{
 				last_status = OFFLINE;
-				printf("host %s offline just now\n", argv[1]);
+				sprintf(outbuf, "%s host %s offline just now\n", timebuf, argv[1]);
+				fprintf(stdout, outbuf);
+				fprintf(fp, outbuf);
 			}
 		}
+		fclose(fp);
 	}
     return 0;
 }
