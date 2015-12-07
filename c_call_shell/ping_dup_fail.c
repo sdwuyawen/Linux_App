@@ -39,10 +39,13 @@ int mysystem(char *cmdstring, char *buf, int len)
 		close(fd[0]);
 		if (waitpid(pid, NULL, 0) < 0)
 			return -3;
+		printf("father process end\n");
 	}
 	else                  /* 子进程 */ 
 	{
+		printf("child process\n");
 		close(fd[0]);     
+//		write(fd[1], "123", 4);
 		/* 把管道f[1]写入STDOUT，即标准输出重定向至管道 */
 		if (fd[1] != STDOUT_FILENO)
 		{
@@ -54,11 +57,16 @@ int mysystem(char *cmdstring, char *buf, int len)
 			close(fd[1]);
 		} 
 		/* 标准输出已经重定向至fd[1] */
-		printf("child process\n");
-		printf("123\n");
-//		write(fd[1], "123", 4);
+		printf("child process stdout\n");
+		/* 分别使用system()和execl()调用shell */
+		system("ls -l");
+		/* The exec() family of functions replaces the current process 
+		 * image with a new process image 
+		 */
 //		if (execl("/bin/sh", "sh", "-c", cmdstring, (char*)0) == -1)
 //			return -4;
+		printf("child process end\n");
+		exit(0);
 	} 
 	return 0;
 }
@@ -69,6 +77,8 @@ int main(int argc,char **argv)
 	int i;
 	char cmdbuf[100];
 	char outbuf[1024];
+	char *path="./testout.txt";
+	FILE *fp;
 
 	if(argc != 2)
 	{
@@ -83,14 +93,18 @@ int main(int argc,char **argv)
 		}
 	}
     
-    printf("当前进程的进程号为%d\n",getpid());
-	sprintf(cmdbuf, "ping %s -c 1 -w 1", argv[1]);
+	sprintf(cmdbuf, "ping %s -c 1 -W 1", argv[1]);
 //    ret = system(cmdbuf);  //调用shell命令 ls -l
 	ret = mysystem(cmdbuf, outbuf, sizeof(outbuf));
 	printf("output:%s\n", outbuf);
 	
     printf("ret = %d\n",ret);
-//
+
+	/* 把父进程得到的outbuf写入文件，证明父进程读取到管道的数据 */
+	fp = fopen(path, "w");
+	fputs(outbuf, fp);
+	fclose(fp);
+
 //	/* host is online */
 //	if(ret == 0)
 //	{
