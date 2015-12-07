@@ -31,6 +31,7 @@ int mysystem(char *cmdstring, char *buf, int len)
 	}
 	else if (pid > 0)		/* 父进程 */ 
 	{
+		printf("father process\n");
 		close(fd[1]);     
 		count = 0;
 		while ((n = read(fd[0], buf + count, len)) > 0 && n > 0 && count < len)
@@ -42,16 +43,20 @@ int mysystem(char *cmdstring, char *buf, int len)
 	else                  /* 子进程 */ 
 	{
 		close(fd[0]);     
-//		if (fd[1] != STDOUT_FILENO)
-//		{
-//			if (dup2(fd[1], STDOUT_FILENO) != STDOUT_FILENO)
-//			{
-//				return -1;
-//			}
-//			close(fd[1]);
-//		} 
+		/* 把管道f[1]写入STDOUT，即标准输出重定向至管道 */
+		if (fd[1] != STDOUT_FILENO)
+		{
+			/* 把fd[1]复制至STDOUT_FILENO */
+			if (dup2(fd[1], STDOUT_FILENO) != STDOUT_FILENO)
+			{
+				return -1;
+			}
+			close(fd[1]);
+		} 
+		/* 标准输出已经重定向至fd[1] */
 		printf("child process\n");
-		write(fd[1], "123", 4);
+		printf("123\n");
+//		write(fd[1], "123", 4);
 //		if (execl("/bin/sh", "sh", "-c", cmdstring, (char*)0) == -1)
 //			return -4;
 	} 
