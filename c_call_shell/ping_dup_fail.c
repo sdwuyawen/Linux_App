@@ -16,10 +16,15 @@
 int mysystem(char *cmdstring, char *buf, int len)
 {
 	int fd[2];
+	int fd_ret[2];
 	pid_t pid;
 	int n, count; 
+	int ret;
+	int buf_ret;
+
 	memset(buf, 0, len);
-	if (pipe(fd) < 0)
+	/* fd[0]是读端，fd[1]是写端 */
+	if (pipe(fd) < 0 || pipe(fd_ret) < 0)
 	{
 		printf("pipe error.\n");
 		return -1;
@@ -32,11 +37,16 @@ int mysystem(char *cmdstring, char *buf, int len)
 	else if (pid > 0)		/* 父进程 */ 
 	{
 		printf("father process\n");
+		/* 关闭写描述符 */
 		close(fd[1]);     
+		close(fd_ret[1]);     
 		count = 0;
 		while ((n = read(fd[0], buf + count, len)) > 0 && n > 0 && count < len)
 			count += n;
 		close(fd[0]);
+		n = read(fd_ret[0], &buf_ret, 10);
+		printf("fd_set[0] get %d bytes. buf_set = %d\n", n, buf_ret);
+		close(fd_ret[0]);
 		if (waitpid(pid, NULL, 0) < 0)
 			return -3;
 		printf("father process end\n");
@@ -59,7 +69,10 @@ int mysystem(char *cmdstring, char *buf, int len)
 		/* 标准输出已经重定向至fd[1] */
 		printf("child process stdout\n");
 		/* 分别使用system()和execl()调用shell */
-		system("ls -l");
+//		ret = system("ls -l");
+		ret = system(cmdstring);
+		write(fd_ret[1], &ret, 4);
+		close(fd_ret[1]);
 		/* The exec() family of functions replaces the current process 
 		 * image with a new process image 
 		 */
